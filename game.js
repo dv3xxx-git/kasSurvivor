@@ -1,3 +1,5 @@
+//import { getCenter } from './helpers.js';
+
 const FIXED_TPS = 1;
 
 class GameScene extends Phaser.Scene {
@@ -7,7 +9,9 @@ class GameScene extends Phaser.Scene {
   preload() {
     this.load.image('kHero', 'assets/heroes.png');
   }
-
+  init(get) {
+    this.event = get.event;
+  }
   create() {
     this.gameWidth = this.sys.game.config.width;
     this.gameHeight = this.sys.game.config.height;
@@ -24,15 +28,23 @@ class GameScene extends Phaser.Scene {
     this.lastShot = 0;
     this.shotDelay = 5000;
 
+
+    this.event.spawn.forEach(spawn => {
+      this.spawnEnemy(spawn);
+    });
+
+
     this.time.addEvent({
       delay: 1000,
       callback:  this.spawnEnemy,
       callbackScope: this,
       loop: true
     });
+
   }
 
-  spawnEnemy (){
+  spawnEnemy (unitName = null){
+
     const side = Phaser.Math.Between(0, 3);
     let x, y;
 
@@ -55,8 +67,14 @@ class GameScene extends Phaser.Scene {
         break;
     }
 
-    const enemy = this.add.circle(x, y, 10, 0xff5555, 1);
-    console.log('spawnEnemy');
+    let enemy;
+    if(unitName != null) {
+      enemy = this.add.circle(x, y, 10, 0xffa500, 1)
+    }else {
+      enemy = this.add.circle(x, y, 10, 0xff5555, 1);
+    }
+
+
     this.enemies.add(enemy);
   }
 
@@ -163,15 +181,47 @@ class MenuScene extends Phaser.Scene {
 
   create()
   {
-    const centerX = this.scale.width / 2;
-    const centerY = this.scale.height / 2;
+    const center = getCenter(this);
 
-    this.texture.get('startBtn').setFilter(Phaser.Texture.FilterMode.NEARES);
+    //this.texture.get('startBtn').setFilter(Phaser.Texture.FilterMode.NEARES);
 
-    const startButton = this.add.image(centerX,centerY, 'startBtn').setScale(5)
+    const startButton = this.add.image(center.x,center.y, 'startBtn').setScale(5)
       .setInteractive({useHandCursor: true}).on('pointerdown', () => {
-        this.scene.start('GameScene');
+        this.scene.start('SpeakWithHelper', {
+          event: 'startGame'
+        });
       });
+  }
+}
+
+class SpeakWithHelper extends Phaser.Scene {
+  constructor(event) {
+    super('SpeakWithHelper');
+  }
+  init(get) {
+    this.event = get.event;
+  }
+  preload()
+  {
+    // тут нужно кнопку продолжить!
+    this.load.image('startBtn', 'assets/start.png');
+  }
+  create()
+  {
+    const event = getEvent('startGame');
+    this.add.text(100, 100, event.text, {
+            fontSize: '24px',
+            fill: '#ffffff'
+    });
+
+    const center = getCenter(this);
+    console.log(event.spawn);
+    this.add.image(center.x, center.y, 'startBtn').setScale(5)
+      .setInteractive({useHandCursor: true}).on('pointerdown', () => {
+      this.scene.start(event.nextScene, {
+        event: event
+      });
+    });
   }
 }
 
@@ -179,7 +229,7 @@ const config = {
   width: window.innerWidth,
   height: window.innerHeight,
   type: Phaser.AUTO,
-  scene: [MenuScene,GameScene],
+  scene: [MenuScene,GameScene,SpeakWithHelper],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH
