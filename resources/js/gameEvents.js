@@ -8,6 +8,6 @@ const EVENTS = {
   }
 }
 
-function getEvent(eventName) {
+export function getEvent(eventName) {
     return EVENTS[eventName] || null;
 }

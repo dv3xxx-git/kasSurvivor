@@ -6,8 +6,6 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
   </head>
   <body>
-    <script src="helpers.js"></script>
-    <script src="gameEvents.js"></script>
-    <script src="game.js"></script>
+    @vite(['resources/js/app.js'])
   </body>
 </html>

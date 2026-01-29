@@ -1,4 +1,6 @@
-//import { getCenter } from './helpers.js';
+
+import { getCenter } from './helpers.js';
+import { getEvent } from './gameEvents.js';
 
 const FIXED_TPS = 1;
 
