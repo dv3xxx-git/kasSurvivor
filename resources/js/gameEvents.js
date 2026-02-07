@@ -5,6 +5,15 @@ const EVENTS = {
     text: 'test123',
     spawn: ['Bitcoin', 'Toncoin'],
     nextScene: 'GameScene'
+  },
+  dead: {
+    text: 'you are dead',
+    nextScene: 'DeadScene'
+  },
+  resetGame: {
+    text: 'you are dead, but...',
+    spawn: ['Bitcoin', 'Toncoin'],
+    nextScene: 'GameScene'
   }
 }
 

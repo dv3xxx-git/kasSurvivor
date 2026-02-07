@@ -4,6 +4,15 @@ import { getEvent } from './gameEvents.js';
 
 const FIXED_TPS = 1;
 
+async function loadCryptoStatsData() {
+  const response = await fetch('/getCryptoStats');
+  const result = await response.json();
+
+  console.log(result);
+}
+
+
+
 class GameScene extends Phaser.Scene {
   constructor() {
     super('GameScene');
@@ -79,6 +88,7 @@ class GameScene extends Phaser.Scene {
 
     this.enemies.add(enemy);
   }
+
 
   fireProjectile() {
     if (this.enemies.children.size === 0) return;
@@ -163,12 +173,59 @@ class GameScene extends Phaser.Scene {
           enemy.destroy();
           proj.destroy();
           break; // один снаряд — один враг
+        }
+      }
+    });
+    //checkAttackbyEnemies
+    if(this.checkPlayerState()) {
+      return;
+    };
+  }
+
+  checkPlayerState() {
+    for (let i = 0; i < this.enemies.children.entries.length; i++) {
+      const enemy = this.enemies.children.entries[i];
+      const dx = this.player.x - enemy.x;
+      const dy = this.player.y - enemy.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist <= 14){
+
+        this.scene.stop();
+
+        const event = getEvent('dead');
+        console.log('dead');
+        this.scene.start(event.nextScene, {
+          event: event
+        });
+
+        return true;
+      }
+    }
   }
 }
 
-    });
-
+class DeadScene extends Phaser.Scene {
+  constructor() {
+    super('DeadScene');
   }
+
+  preload()
+  {
+    this.load.image('startBtn', 'assets/start.png');
+  }
+
+  create()
+  {
+    const center = getCenter(this);
+    const startButton = this.add.image(center.x,center.y, 'startBtn').setScale(5)
+      .setInteractive({useHandCursor: true}).on('pointerdown', () => {
+        this.scene.start('SpeakWithHelper', {
+          event: 'resetGame'
+        });
+      });
+  }
+
 }
 
 class MenuScene extends Phaser.Scene {
@@ -181,8 +238,9 @@ class MenuScene extends Phaser.Scene {
     this.load.image('startBtn', 'assets/start.png');
   }
 
-  create()
+  async create()
   {
+    await loadCryptoStatsData();
     const center = getCenter(this);
 
     //this.texture.get('startBtn').setFilter(Phaser.Texture.FilterMode.NEARES);
@@ -210,7 +268,7 @@ class SpeakWithHelper extends Phaser.Scene {
   }
   create()
   {
-    const event = getEvent('startGame');
+    const event = getEvent(this.event);
     this.add.text(100, 100, event.text, {
             fontSize: '24px',
             fill: '#ffffff'
@@ -231,7 +289,7 @@ const config = {
   width: window.innerWidth,
   height: window.innerHeight,
   type: Phaser.AUTO,
-  scene: [MenuScene,GameScene,SpeakWithHelper],
+  scene: [MenuScene,GameScene,SpeakWithHelper,DeadScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH
