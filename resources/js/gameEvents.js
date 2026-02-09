@@ -3,7 +3,7 @@
 const EVENTS = {
   startGame: {
     text: 'test123',
-    spawn: ['Bitcoin', 'Toncoin'],
+    spawn: {Bitcoin:3, Toncoin:4},
     nextScene: 'GameScene'
   },
   dead: {
@@ -12,7 +12,7 @@ const EVENTS = {
   },
   resetGame: {
     text: 'you are dead, but...',
-    spawn: ['Bitcoin', 'Toncoin'],
+    spawn: {Bitcoin:3, Toncoin:4},
     nextScene: 'GameScene'
   }
 }

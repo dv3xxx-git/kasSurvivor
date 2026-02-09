@@ -4,11 +4,12 @@ import { getEvent } from './gameEvents.js';
 
 const FIXED_TPS = 1;
 
+let cryptoData = null;
+
 async function loadCryptoStatsData() {
   const response = await fetch('/getCryptoStats');
   const result = await response.json();
-
-  console.log(result);
+  cryptoData = result;
 }
 
 
@@ -28,6 +29,7 @@ class GameScene extends Phaser.Scene {
     this.gameHeight = this.sys.game.config.height;
 
     this.player = this.add.image(this.gameWidth / 2, this.gameHeight / 2, 'kHero').setScale(0.5);
+    this.player.hp = cryptoData['KAS']['hPoint'];
     this.player.setDepth(10);
 
 
@@ -39,11 +41,19 @@ class GameScene extends Phaser.Scene {
     this.lastShot = 0;
     this.shotDelay = 5000;
 
-
-    this.event.spawn.forEach(spawn => {
+    this.hpText = this.add.text(this.gameWidth - 20, 20, `HP: ${this.player.hp}`, {
+      fontSize: '24px',
+      fill: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 10, y: 5 }
+    }).setOrigin(1, 0);
+    /*this.event.spawn.forEach((spawn, index) => {
+      console.log(spawn, index);
       this.spawnEnemy(spawn);
-    });
-
+    });*/
+    for (const monsterName in this.event.spawn){
+      this.spawnEnemy(monsterName, this.event.spawn[monsterName])
+    }
 
     this.time.addEvent({
       delay: 1000,
@@ -54,39 +64,60 @@ class GameScene extends Phaser.Scene {
 
   }
 
-  spawnEnemy (unitName = null){
+  spawnEnemy (unitName = null, countMonster = 1){
+    for (let i = 0; i < countMonster; i++) {
+      const side = Phaser.Math.Between(0, 3);
+      let x, y;
 
-    const side = Phaser.Math.Between(0, 3);
-    let x, y;
+      switch(side) {
+        case 0:
+          x = Phaser.Math.Between(0, this.gameWidth);
+          y = -20;
+          break;
+        case 1:
+          x = Phaser.Math.Between(0, this.gameWidth);
+          y = this.gameHeight + 20;
+          break;
+        case 2:
+          x = -20;
+          y = Phaser.Math.Between(0, this.gameHeight);
+          break;
+        case 3: // справа
+          x = this.gameWidth + 20;
+          y = Phaser.Math.Between(0, this.gameHeight);
+          break;
+      }
 
-    switch(side) {
-      case 0:
-        x = Phaser.Math.Between(0, this.gameWidth);
-        y = -20;
-        break;
-      case 1:
-        x = Phaser.Math.Between(0, this.gameWidth);
-        y = this.gameHeight + 20;
-        break;
-      case 2:
-        x = -20;
-        y = Phaser.Math.Between(0, this.gameHeight);
-        break;
-      case 3: // справа
-        x = this.gameWidth + 20;
-        y = Phaser.Math.Between(0, this.gameHeight);
-        break;
+      let enemy;
+      let hp;
+      let dmg;
+
+      if(unitName != null) {
+        if(unitName == 'Bitcoin')
+        {
+          hp = cryptoData['BTC']['hPoint'];
+          dmg = cryptoData['BTC']['damage'];
+          enemy = this.add.circle(x, y, 10, 0xffa500, 1);
+          enemy.hp = hp;
+          enemy.dmg = dmg;
+        }
+        else {
+          hp = 1;
+          dmg = 1;
+          enemy = this.add.circle(x, y, 10, 0xff5555, 1);
+          enemy.hp = hp;
+          enemy.dmg = dmg;
+        }
+      }else {
+        hp = 1;
+        dmg = 1;
+        enemy = this.add.circle(x, y, 10, 0xff5555, 1);
+        enemy.hp = hp;
+        enemy.dmg = dmg;
+      }
+      this.enemies.add(enemy);
     }
 
-    let enemy;
-    if(unitName != null) {
-      enemy = this.add.circle(x, y, 10, 0xffa500, 1)
-    }else {
-      enemy = this.add.circle(x, y, 10, 0xff5555, 1);
-    }
-
-
-    this.enemies.add(enemy);
   }
 
 
@@ -113,6 +144,7 @@ class GameScene extends Phaser.Scene {
 
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, closestEnemy.x, closestEnemy.y);
     projectile.speed = 300;
+    projectile.dmg = cryptoData['KAS']['damage'];
     projectile.dx = Math.cos(angle);
     projectile.dy = Math.sin(angle);
   }
@@ -132,6 +164,8 @@ class GameScene extends Phaser.Scene {
 
     // add polygon
     }
+
+    this.hpText.setText(`HP: ${this.player.hp}`);
 
     this.enemies.children.entries.forEach(enemy => {
       const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
@@ -170,8 +204,14 @@ class GameScene extends Phaser.Scene {
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist <= 14) { // 4 + 10
-          enemy.destroy();
+          if(enemy.hp - proj.dmg <= 0)
+          {
+            enemy.destroy();
+            proj.destroy();
+          }
+          enemy.hp = enemy.hp - proj.dmg;
           proj.destroy();
+          console.log(enemy.hp);
           break; // один снаряд — один враг
         }
       }
@@ -190,16 +230,20 @@ class GameScene extends Phaser.Scene {
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist <= 14){
+        if(this.player.hp - enemy.dmg <= 0){
+          this.scene.stop();
 
-        this.scene.stop();
+          const event = getEvent('dead');
+          this.scene.start(event.nextScene, {
+            event: event
+          });
 
-        const event = getEvent('dead');
-        console.log('dead');
-        this.scene.start(event.nextScene, {
-          event: event
-        });
+          return true;
+        }
+        else {
+          this.player.hp = this.player.hp - enemy.dmg;
+        }
 
-        return true;
       }
     }
   }
