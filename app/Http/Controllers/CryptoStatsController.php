@@ -9,49 +9,79 @@ class CryptoStatsController extends Controller
 {
     public function getCryptoStats()
     {
+      // пока отрубаем не мучать сеть
+      return $this->getFallbackData();
       try {
         //Нужно подрубить потом ...
-        $response = Http::withOptions(['verify' => false])->timeout(10)->get('https://api.coingecko.com/api/v3/coins/markets',
+        // нужно сделать параметром и передавать в роуте!!!
+        $responseBtc = Http::withHeader('X-API-Key', env('API_NINJAS_SECRET_KEY'))->withOptions(['verify' => false])->timeout(2)->get('https://api.api-ninjas.com/v1/marketcap',
           [
-              'vs_currency' => 'usd',
-              'ids' => 'bitcoin,kaspa',
-              'order' => 'market_cap_desc',
-              'per_page' => 2,
-              'page' => 1,
-              'sparkline' => false
+              'ticker' => 'BTC',
           ]
         );
+        $responseBtcPrice = Http::withHeader('X-API-Key', env('API_NINJAS_SECRET_KEY'))->withOptions(['verify' => false])->timeout(2)->get('https://api.api-ninjas.com/v1/bitcoin');
+
+        $responseKas = Http::withOptions(['verify' => false])->timeout(2)->get('https://api.kaspa.org/info/marketcap');
+        $responseKasPrice = Http::withOptions(['verify' => false])->timeout(2)->get('https://api.kaspa.org/info/price');
+
         // скипаем коингеко, мало зпросов
-        if (!$response->successful()) {
+        if (!$responseKas->successful() || !$responseBtc->successful() || !$responseKasPrice->successful() || !$responseBtcPrice->successful()) {
           return $this->getFallbackData();
         }
 
-        $coins = $response->json();
+        $dataBtc = $responseBtc->json();
+        $dataKas = $responseKas->json();
+        $dataKasPrice = $responseKasPrice->json();
+        $dataBtcPrice = $responseBtcPrice->json();
 
-        $btcData = collect($coins)->firstWhere('id', 'bitcoin');
-        $kasData = collect($coins)->firstWhere('id', 'kaspa');
+        $btcMarketCap = is_array($dataBtc) && isset($dataBtc['market_cap'])
+          ? $dataBtc['market_cap']
+               : null;
 
-        if(!$btcData || $kasData) {
+        $kasMarketCap = isset($dataKas['marketcap'])
+          ? $dataKas['marketcap']
+          : null;
+
+        $kasPrice = isset($dataKasPrice['price'])
+          ? $dataKasPrice['price']
+          : null;
+
+        $btcPrice = isset($dataBtcPrice['price'])
+            ? $dataBtcPrice['price']
+            : null;
+
+        if(!$btcMarketCap || !$kasMarketCap || !$kasPrice || !$btcPrice) {
           return $this->getFallbackData();
         }
 
+        $kasHPoint = round($kasMarketCap / 100000000);
 
-        $data = [
-          'BTC' => ['marketCap' => $btcData['marketCap'], 'tps' => 1, 'hPoint' => 1],
-          'KAS' => ['marketCap' => 0.01, 'tps' => 10, 'hPoint' => 1],
+        $btcHPoint = round($btcMarketCap / 100000000);
+
+        $kasDamage = max(1,round($kasPrice / 10000));
+
+        $btcDamage = round($btcPrice / 10000);
+
+        $res = [
+          'BTC' => ['marketCap' => $btcMarketCap, 'hPoint' => $btcHPoint, 'damage' => $btcDamage, 'price' => $btcPrice],
+          'KAS' => ['marketCap' => $kasMarketCap, 'hPoint' => $kasHPoint, 'damage' => $kasDamage, 'price' => $kasPrice],
         ];
 
-      } catch (Exception $e) {
+        return response()->json($res);
 
+      } catch (Exception $e) {
+        Log::error('CryptoStatsError:' . $e->getMessage());
+        return $this->getFallbackData();
       }
 
-      dd($data);
-      return $data;
     }
 
     private function getFallbackData()
     {
-
+      return [
+        'BTC' => ['marketCap' => 3853192350, 'hPoint' => 39, 'damage' => 10],
+        'KAS' => ['marketCap' => 862943551, 'hPoint' => 9, 'damage' => 1],
+      ];
     }
 }
 //
