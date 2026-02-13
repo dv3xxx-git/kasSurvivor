@@ -19,21 +19,48 @@ class GameScene extends Phaser.Scene {
     super('GameScene');
   }
   preload() {
-    this.load.image('kHero', 'assets/heroes.png');
+    this.load.image('kasHeroImage', 'assets/sprKasHero.png');
+
+    //this.load.image('kHero', 'assets/heroes.png');
   }
   init(get) {
     this.event = get.event;
   }
   create() {
-    this.gameWidth = this.sys.game.config.width;
-    this.gameHeight = this.sys.game.config.height;
+    this.gameWidth = this.scale.width;
+    this.gameHeight = this.scale.height;
 
-    this.player = this.add.image(this.gameWidth / 2, this.gameHeight / 2, 'kHero').setScale(0.5);
+    const img = this.textures.get('kasHeroImage').getSourceImage();
+    const frameWidth = Math.floor(img.width / 3);
+    const frameHeight = img.height;
+
+    this.textures.addSpriteSheet('kasHero', img, { frameWidth, frameHeight });
+
+    this.anims.create({
+      key: 'kasHeroRun',
+      frames: this.anims.generateFrameNumbers('kasHero', {start: 0, end: 2}),
+      frameRate: 10,
+      repeat: -1,
+    });
+
+    this.player = this.physics.add.sprite(200, 200, 'kasHero', 0);
+    this.player.setOrigin(0.5, 1);
+    this.player.setScale(0.1);
+    //this.player = this.add.image(this.gameWidth / 2, this.gameHeight / 2, 'kHero').setScale(0.5);
     this.player.hp = cryptoData['KAS']['hPoint'];
     this.player.setDepth(10);
 
-
+    // arrow
     this.cursors = this.input.keyboard.createCursorKeys();
+    //wasd
+    // WASD
+    this.keys = this.input.keyboard.addKeys({
+      up: Phaser.Input.Keyboard.KeyCodes.W,
+      down: Phaser.Input.Keyboard.KeyCodes.S,
+      left: Phaser.Input.Keyboard.KeyCodes.A,
+      right: Phaser.Input.Keyboard.KeyCodes.D
+    });
+
 
     this.enemies = this.add.group();
 
@@ -150,19 +177,37 @@ class GameScene extends Phaser.Scene {
   }
 
   update() {
+
+
+
+
     const now = this.time.now;
 
     const speed = 200;
-    const dx = (this.cursors.right.isDown ? 1 : 0) - (this.cursors.left.isDown ? 1 : 0);
-    const dy = (this.cursors.down.isDown ? 1 : 0) - (this.cursors.up.isDown ? 1 : 0);
+
+    const left = this.cursors.left.isDown || this.keys.left.isDown;
+    const right = this.cursors.right.isDown || this.keys.right.isDown;
+    const up = this.cursors.up.isDown || this.keys.up.isDown;
+    const down = this.cursors.down.isDown || this.keys.down.isDown;
+
+
+    const dx = (right ? 1 : 0) - (left ? 1 : 0);
+    const dy = (down ? 1 : 0) - (up ? 1 : 0);
+    const dt = this.game.loop.delta / 1000;
 
     if (dx !== 0 || dy !== 0) {
       const len = Math.sqrt(dx * dx + dy * dy);
-      console.log(len);
-      this.player.x += (dx / len) * speed * this.game.loop.delta / 1000;
-      this.player.y += (dy / len) * speed * this.game.loop.delta / 1000;
 
-    // add polygon
+      this.player.x += (dx / len) * speed * dt;
+      this.player.y += (dy / len) * speed * dt;
+
+      if (dx < 0) this.player.setFlipX(true);
+      if (dx > 0) this.player.setFlipX(false);
+
+      this.player.play('kasHeroRun', true);
+    } else {
+      this.player.anims.stop();
+      this.player.setFrame(0);
     }
 
     this.hpText.setText(`HP: ${this.player.hp}`);
@@ -262,7 +307,7 @@ class DeadScene extends Phaser.Scene {
   create()
   {
     const center = getCenter(this);
-    const startButton = this.add.image(center.x,center.y, 'startBtn').setScale(5)
+    const startButton = this.add.image(center.x,center.y, 'startBtn')
       .setInteractive({useHandCursor: true}).on('pointerdown', () => {
         this.scene.start('SpeakWithHelper', {
           event: 'resetGame'
