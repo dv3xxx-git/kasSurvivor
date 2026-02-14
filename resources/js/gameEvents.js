@@ -2,7 +2,7 @@
 
 const EVENTS = {
   startGame: {
-    text: 'test123',
+    text: 'test123 some strong scenari text i need check rollsalofjask lgfjaskfgjksajgsa kjgsakg jaskgjkasjgksdgjkdl sghsfdljkghsdfjl kghfdsjlkgfdhgdjk ghfdjkghdfjk gfhsajkghjasghajsjkg  ghsajghasjhgak ashfgjksahgak afhsjkghas ahgsjkg ghsajkghsajk hgasjkghsa hgasjkghasjk ',
     spawn: {Bitcoin:3, Toncoin:4},
     nextScene: 'GameScene'
   },

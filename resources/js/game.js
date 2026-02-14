@@ -473,33 +473,134 @@ class MenuScene extends Phaser.Scene {
 }
 
 class SpeakWithHelper extends Phaser.Scene {
-  constructor(event) {
+  constructor() {
     super('SpeakWithHelper');
   }
+
   init(get) {
-    this.event = get.event;
+    this.eventKey = get.event;
   }
-  preload()
-  {
-    // тут нужно кнопку продолжить!
-    this.load.image('startBtn', 'assets/start.png');
+
+  preload() {
+    this.load.image('kasHelper', 'assets/KasHelperDialog.png');
   }
-  create()
-  {
-    const event = getEvent(this.event);
-    this.add.text(100, 100, event.text, {
-            fontSize: '24px',
-            fill: '#ffffff'
+
+  create() {
+    const event = getEvent(this.eventKey);
+
+    this.bg = this.add.image(0, 0, 'kasHelper')
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0);
+
+    this.dialogBox = { x: 0, y: 0, w: 10, h: 10 };
+
+    this.dialogText = this.add.text(0, 0, '', {
+      fontFamily: 'monospace',
+      fontSize: '22px',
+      color: '#a8f0ff',
+      wordWrap: { width: 10 },
+      lineSpacing: 6
+    }).setScrollFactor(0);
+
+    this.dialogMaskGfx = this.make.graphics({ x: 0, y: 0, add: false });
+    this.dialogMaskGfx.setScrollFactor(0);
+    this.dialogText.setMask(this.dialogMaskGfx.createGeometryMask());
+
+    this.continueZone = this.add.rectangle(0, 0, 10, 10, 0x00ff00, 0.0)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+
+    this.continueZone.on('pointerover', () => {
+      this.tweens.killTweensOf(this.bg);
+      this.bg.setTint(0xE0FFFF);
     });
 
-    const center = getCenter(this);
-    console.log(event.spawn);
-    this.add.image(center.x, center.y, 'startBtn').setScale(5)
-      .setInteractive({useHandCursor: true}).on('pointerdown', () => {
-      this.scene.start(event.nextScene, {
-        event: event
-      });
+    this.continueZone.on('pointerout', () => {
+      this.bg.clearTint();
     });
+
+    this.continueZone.on('pointerdown', () => {
+      this.cameras.main.shake(80, 0.002);
+
+      this.scene.start(event.nextScene, { event });
+    });
+
+    this.typeText(event.text ?? '', 18);
+    console.log(this.typeText);
+    this.layoutHelper();
+    this.scale.on('resize', () => this.layoutHelper());
+  }
+
+  typeText(fullText, speedMs = 20) {
+    if (this.typeTimer) this.typeTimer.remove(false);
+    this.dialogText.setText('');
+
+    let i = 0;
+    this.typeTimer = this.time.addEvent({
+      delay: speedMs,
+      loop: true,
+      callback: () => {
+        i++;
+        this.dialogText.setText(fullText.slice(0, i));
+        this.recalcDialogMask();
+        if (i >= fullText.length) this.typeTimer.remove(false);
+      }
+    });
+  }
+
+  layoutHelper() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+
+    this.bg.setPosition(w / 2, h / 2);
+
+    const scaleX = w / this.bg.width;
+    const scaleY = h / this.bg.height;
+    const scale = Math.min(scaleX, scaleY);
+    this.bg.setScale(scale);
+
+    const left = this.bg.x - this.bg.displayWidth / 2;
+    const top = this.bg.y - this.bg.displayHeight / 2;
+
+    const dialogX = 0.45, dialogY = 0.41, dialogW = 0.43, dialogH = 0.18;
+    const btnX = 0.653, btnY = 0.91, btnW = 0.31, btnH = 0.12;
+
+    this.dialogBox.x = left + this.bg.displayWidth * dialogX;
+    this.dialogBox.y = top  + this.bg.displayHeight * dialogY;
+    this.dialogBox.w = this.bg.displayWidth * dialogW;
+    this.dialogBox.h = this.bg.displayHeight * dialogH;
+
+    this.dialogText.setPosition(this.dialogBox.x, this.dialogBox.y);
+    this.dialogText.setWordWrapWidth(this.dialogBox.w);
+
+    this.recalcDialogMask();
+
+    this.continueZone.setPosition(
+      left + this.bg.displayWidth * btnX,
+      top + this.bg.displayHeight * btnY
+    );
+    this.continueZone.setSize(
+      this.bg.displayWidth * btnW,
+      this.bg.displayHeight * btnH
+    );
+
+    this.continueZone.input.hitArea.setTo(
+      -this.continueZone.width / 2,
+      -this.continueZone.height / 2,
+      this.continueZone.width,
+      this.continueZone.height
+    );
+  }
+
+  recalcDialogMask() {
+    this.dialogMaskGfx.clear();
+    this.dialogMaskGfx.fillStyle(0xffffff, 1);
+    this.dialogMaskGfx.fillRect(
+      this.dialogBox.x,
+      this.dialogBox.y,
+      this.dialogBox.w,
+      this.dialogBox.h
+    );
   }
 }
 

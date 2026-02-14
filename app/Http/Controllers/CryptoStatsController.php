@@ -10,6 +10,7 @@ class CryptoStatsController extends Controller
     public function getCryptoStats()
     {
       // пока отрубаем не мучать сеть
+      // сделать фолбэк дату только по тем, который запросить 
       return $this->getFallbackData();
       try {
         //Нужно подрубить потом ...
