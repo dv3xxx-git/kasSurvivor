@@ -1,5 +1,6 @@
 import { getEvent } from './gameEvents.js';
 import { getCryptoData } from './cryptoStats.js';
+import { getCenter } from './helpers.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -9,6 +10,8 @@ export default class GameScene extends Phaser.Scene {
   preload() {
     this.load.image('kasHeroImage', 'assets/sprKasHero.png');
     this.load.image('btc', 'assets/btc.png');
+    this.load.image('monster', 'assets/monster.png');
+    this.load.image('backGame', 'assets/backGame.png');
   }
 
   init(get) {
@@ -20,6 +23,15 @@ export default class GameScene extends Phaser.Scene {
 
     this.gameWidth = this.scale.width;
     this.gameHeight = this.scale.height;
+
+    // back
+    this.bg = this.add.image(this.gameWidth / 2, this.gameHeight / 2, 'backGame')
+      .setScrollFactor(0)
+      .setDepth(-100);
+    const scaleX = this.gameWidth / this.bg.width;
+    const scaleY = this.gameHeight / this.bg.height;
+    const scale = Math.max(scaleX, scaleY);
+    this.bg.setScale(scale);
 
     const img = this.textures.get('kasHeroImage').getSourceImage();
     const frameWidth = Math.floor(img.width / 3);
@@ -33,8 +45,9 @@ export default class GameScene extends Phaser.Scene {
       frameRate: 10,
       repeat: -1,
     });
+    const center = getCenter(this);
 
-    this.player = this.physics.add.sprite(200, 200, 'kasHero', 0);
+    this.player = this.physics.add.sprite(center.x, center.y, 'kasHero', 0);
     this.player.setOrigin(0.5, 1);
     this.player.setScale(0.15);
     this.player.hp = cryptoData['KAS']['hPoint'];
@@ -99,7 +112,9 @@ export default class GameScene extends Phaser.Scene {
         enemy.hp = cryptoData['BTC']['hPoint'];
         enemy.dmg = cryptoData['BTC']['damage'];
       } else {
-        enemy = this.add.circle(x, y, 10, 0xff5555, 1);
+        enemy = this.add.sprite(x, y, 'monster');
+        enemy.setScale(0.08);
+        enemy.setOrigin(0.5, 0.5);
         enemy.hp = 1;
         enemy.dmg = 1;
       }
@@ -166,7 +181,6 @@ export default class GameScene extends Phaser.Scene {
 
     this.hpText.setText(`HP: ${this.player.hp}`);
 
-    // enemies move + flip (только у sprite есть setFlipX)
     this.enemies.children.entries.forEach(enemy => {
       const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
       enemy.x += Math.cos(angle) * 50 * dt;

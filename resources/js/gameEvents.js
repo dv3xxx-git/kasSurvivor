@@ -2,8 +2,8 @@
 
 const EVENTS = {
   startGame: {
-    text: 'test123 some strong scenari text i need check rollsalofjask lgfjaskfgjksajgsa kjgsakg jaskgjkasjgksdgjkdl sghsfdljkghsdfjl kghfdsjlkgfdhgdjk ghfdjkghdfjk gfhsajkghjasghajsjkg  ghsajghasjhgak ashfgjksahgak afhsjkghas ahgsjkg ghsajkghsajk hgasjkghsa hgasjkghasjk ',
-    spawn: {Bitcoin:3, Toncoin:4},
+    text: 'test123 ajkghsajk hgasjkghsa hgasjkghasjk ',
+    spawn: {Bitcoin:3, Etherium:4},
     nextScene: 'GameScene'
   },
   dead: {
@@ -12,7 +12,7 @@ const EVENTS = {
   },
   resetGame: {
     text: 'you are dead, but...',
-    spawn: {Bitcoin:3, Toncoin:4},
+    spawn: {Bitcoin:3, Etherium:4},
     nextScene: 'GameScene'
   }
 }
