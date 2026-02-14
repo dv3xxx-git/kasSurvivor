@@ -79,8 +79,9 @@ class CryptoStatsController extends Controller
     private function getFallbackData()
     {
       return [
-        'BTC' => ['marketCap' => 3853192350, 'hPoint' => 39, 'damage' => 10],
-        'KAS' => ['marketCap' => 862943551, 'hPoint' => 9, 'damage' => 1],
+        'BTC' => ['marketCap' => 13743853192350, 'hPoint' => 39, 'damage' => 10, 'price' => 68859],
+        'KAS' => ['marketCap' => 862943551, 'hPoint' => 9, 'damage' => 1, 'price' => 0.0323],
+        'ETH' => ['marketCap' => 24755660111, 'hPoint' => 50, 'damage' => 5, 'price' => 2000],
       ];
     }
 }

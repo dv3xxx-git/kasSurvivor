@@ -322,24 +322,153 @@ class MenuScene extends Phaser.Scene {
     super('MenuScene');
   }
 
-  preload()
-  {
-    this.load.image('startBtn', 'assets/start.png');
+  preload() {
+    this.load.image('menu', 'assets/menu.png');
   }
 
-  async create()
-  {
+  async create() {
     await loadCryptoStatsData();
-    const center = getCenter(this);
+    this.defaultInfo = this.buildCryptoInfo(cryptoData);
 
-    //this.texture.get('startBtn').setFilter(Phaser.Texture.FilterMode.NEARES);
+    this.bg = this.add.image(0, 0, 'menu').setOrigin(0.5, 0.5).setScrollFactor(0);
 
-    const startButton = this.add.image(center.x,center.y, 'startBtn').setScale(5)
-      .setInteractive({useHandCursor: true}).on('pointerdown', () => {
-        this.scene.start('SpeakWithHelper', {
-          event: 'startGame'
-        });
-      });
+    // scroll table
+    this.infoBox = { x: 0, y: 0, w: 10, h: 10, scrollY: 0, maxScroll: 0 };
+    this.infoBg = this.add.rectangle(0, 0, 10, 10, 0x000000, 0.2)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setFillStyle(0x000000, 0.0);
+
+    this.infoText = this.add.text(0, 0, this.defaultInfo, {
+      fontFamily: 'monospace',
+      fontSize: '22px',
+      color: '#a8f0ff',
+      wordWrap: { width: 10 }
+    }).setScrollFactor(0);
+
+
+    this.infoMaskGfx = this.make.graphics({ x: 0, y: 0, add: false });
+    this.infoMaskGfx.setScrollFactor(0);
+
+    this.infoText.setMask(this.infoMaskGfx.createGeometryMask());
+
+    this.startZone = this.add.rectangle(0, 0, 10, 10, 0x00ff00, 0.0)
+      .setScrollFactor(0)
+      .setInteractive({ useHandCursor: true });
+
+    this.startZone.on('pointerdown', () => {
+      this.scene.start('SpeakWithHelper', { event: 'startGame' });
+    });
+
+    this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY) => {
+      const x = pointer.worldX;
+      const y = pointer.worldY;
+
+      const inside =
+      x >= this.infoBox.x && x <= this.infoBox.x + this.infoBox.w &&
+      y >= this.infoBox.y && y <= this.infoBox.y + this.infoBox.h;
+
+      if (inside) this.scrollInfo(deltaY);
+    });
+
+    this.layoutMenu();
+    this.scale.on('resize', () => this.layoutMenu());
+  }
+
+  buildCryptoInfo(data) {
+    if (!data) return 'no data';
+
+    const lines = [];
+
+    for (const [elem, v] of Object.entries(data)) {
+      const hp = v?.hPoint ?? 0;
+      const dmg = v?.damage ?? 0;
+      const mcap = v?.marketCap ?? 0;
+      const price = v?.price ?? 0;
+
+      lines.push(
+        `${elem}`,
+        `MarketCap(hp): `,
+        `   ${mcap}(${hp}) HP`,
+        `Price(dmg): `,
+        `   ${price}(${dmg}) DMG`,
+        ''
+      );
+    }
+
+    return lines.join('\n');
+  }
+
+  scrollInfo(deltaY) {
+    const step = 28;
+    this.infoBox.scrollY = Phaser.Math.Clamp(
+      this.infoBox.scrollY + Math.sign(deltaY) * step,
+      0,
+      this.infoBox.maxScroll
+    );
+    this.infoText.y = this.infoBox.y - this.infoBox.scrollY;
+  }
+
+  resetScroll() {
+    this.infoBox.scrollY = 0;
+    this.infoText.y = this.infoBox.y;
+    this.recalcScrollLimits();
+  }
+
+  recalcScrollLimits() {
+    const textHeight = this.infoText.height;
+    this.infoBox.maxScroll = Math.max(0, textHeight - this.infoBox.h);
+    this.infoBox.scrollY = Phaser.Math.Clamp(this.infoBox.scrollY, 0, this.infoBox.maxScroll);
+    this.infoText.y = this.infoBox.y - this.infoBox.scrollY;
+  }
+
+  layoutMenu() {
+    const w = this.scale.width;
+    const h = this.scale.height;
+
+    this.bg.setPosition(w / 2, h / 2);
+
+    const scaleX = w / this.bg.width;
+    const scaleY = h / this.bg.height;
+    const scale = Math.min(scaleX, scaleY);
+    this.bg.setScale(scale);
+
+    const left = this.bg.x - this.bg.displayWidth / 2;
+    const top  = this.bg.y - this.bg.displayHeight / 2;
+
+    const infoX = 0.14, infoY = 0.45, infoW = 0.28, infoH = 0.22;
+    const startX = 0.69, startY = 0.85, startW = 0.385, startH = 0.16;
+    //scroll
+    this.infoBox.x = left + this.bg.displayWidth * infoX;
+    this.infoBox.y = top  + this.bg.displayHeight * infoY;
+    this.infoBox.w = this.bg.displayWidth * infoW;
+    this.infoBox.h = this.bg.displayHeight * infoH;
+
+    this.infoText.setWordWrapWidth(this.infoBox.w);
+
+    this.infoText.setPosition(this.infoBox.x, this.infoBox.y - this.infoBox.scrollY);
+
+    this.infoMaskGfx.clear();
+    this.infoMaskGfx.fillStyle(0xffffff, 1);
+    this.infoMaskGfx.fillRect(this.infoBox.x, this.infoBox.y, this.infoBox.w, this.infoBox.h);
+
+    this.recalcScrollLimits();
+
+    this.startZone.setPosition(
+      left + this.bg.displayWidth * startX,
+      top  + this.bg.displayHeight * startY
+    );
+    this.startZone.setSize(
+      this.bg.displayWidth * startW,
+      this.bg.displayHeight * startH
+    );
+
+    this.startZone.input.hitArea.setTo(
+      -this.startZone.width / 2,
+      -this.startZone.height / 2,
+      this.startZone.width,
+      this.startZone.height
+    );
   }
 }
 
