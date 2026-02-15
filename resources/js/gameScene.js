@@ -19,7 +19,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
-    const cryptoData = getCryptoData(); // <-- берём общие данные
+    const cryptoData = getCryptoData();
+
+    //speed
+
 
     this.gameWidth = this.scale.width;
     this.gameHeight = this.scale.height;

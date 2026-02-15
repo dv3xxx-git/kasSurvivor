@@ -20,12 +20,13 @@ class DeadScene extends Phaser.Scene {
     const center = getCenter(this);
     const startButton = this.add.image(center.x,center.y, 'startBtn')
       .setInteractive({useHandCursor: true}).on('pointerdown', () => {
-        this.scene.start('SpeakWithHelper', {
-          event: 'resetGame'
-        });
-      });
-  }
 
+      });
+      //dead later
+    this.scene.start('SpeakWithHelper', {
+        event: 'resetGame'
+    });
+  }
 }
 
 class MenuScene extends Phaser.Scene {
@@ -96,6 +97,7 @@ class MenuScene extends Phaser.Scene {
       const dmg = v?.damage ?? 0;
       const mcap = v?.marketCap ?? 0;
       const price = v?.price ?? 0;
+      const bTime = v?.bTime ?? 0;
 
       lines.push(
         `${elem}`,
@@ -103,6 +105,7 @@ class MenuScene extends Phaser.Scene {
         `   ${mcap}(${hp}) HP`,
         `Price(dmg): `,
         `   ${price}(${dmg}) DMG`,
+        `Speed: ${bTime}`,
         ''
       );
     }

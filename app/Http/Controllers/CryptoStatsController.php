@@ -10,7 +10,7 @@ class CryptoStatsController extends Controller
     public function getCryptoStats()
     {
       // пока отрубаем не мучать сеть
-      // сделать фолбэк дату только по тем, который запросить 
+      // сделать фолбэк дату только по тем, который запросить
       return $this->getFallbackData();
       try {
         //Нужно подрубить потом ...
@@ -64,8 +64,8 @@ class CryptoStatsController extends Controller
         $btcDamage = round($btcPrice / 10000);
 
         $res = [
-          'BTC' => ['marketCap' => $btcMarketCap, 'hPoint' => $btcHPoint, 'damage' => $btcDamage, 'price' => $btcPrice],
-          'KAS' => ['marketCap' => $kasMarketCap, 'hPoint' => $kasHPoint, 'damage' => $kasDamage, 'price' => $kasPrice],
+          'BTC' => ['marketCap' => $btcMarketCap, 'hPoint' => $btcHPoint, 'damage' => $btcDamage, 'price' => $btcPrice, 'bTime' => 12/600],
+          'KAS' => ['marketCap' => $kasMarketCap, 'hPoint' => $kasHPoint, 'damage' => $kasDamage, 'price' => $kasPrice, 'bTime' => 12/1],
         ];
 
         return response()->json($res);
@@ -80,9 +80,9 @@ class CryptoStatsController extends Controller
     private function getFallbackData()
     {
       return [
-        'BTC' => ['marketCap' => 13743853192350, 'hPoint' => 39, 'damage' => 10, 'price' => 68859],
-        'KAS' => ['marketCap' => 862943551, 'hPoint' => 9, 'damage' => 1, 'price' => 0.0323],
-        'ETH' => ['marketCap' => 24755660111, 'hPoint' => 50, 'damage' => 5, 'price' => 2000],
+        'BTC' => ['marketCap' => 13743853192350, 'hPoint' => 39, 'damage' => 10, 'price' => 68859, 'bTime' => 12/600],
+        'KAS' => ['marketCap' => 862943551, 'hPoint' => 9, 'damage' => 1, 'price' => 0.0323, 'bTime' => 12/1],
+        'ETH' => ['marketCap' => 24755660111, 'hPoint' => 50, 'damage' => 5, 'price' => 2000, 'bTime' => 12/12],
       ];
     }
 }
